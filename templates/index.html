@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg transition-all duration-300 hover:shadow-2xl">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">📰 Fake News Detector</h1>
+
+        <!-- News Input -->
+        <textarea id="newsText" rows="5" placeholder="Paste news content here..."
+            class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+
+        <!-- Predict Button -->
+        <button onclick="checkNews()"
+            class="w-full mt-5 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300">
+            Check Now
+        </button>
+
+        <!-- Result -->
+        <div id="resultBox" class="mt-6 hidden text-center font-bold text-lg"></div>
+
+        <!-- Probability Graph -->
+        <div id="probabilitySection" class="hidden mt-6">
+            <p class="font-semibold mb-2 text-gray-700">Prediction Confidence:</p>
+            <div class="w-full bg-gray-200 rounded-full h-6">
+                <div id="realBar"
+                    class="bg-green-500 h-6 rounded-full transition-all duration-700 ease-in-out"></div>
+            </div>
+            <p id="probaText" class="mt-2 text-center font-medium text-gray-600"></p>
+        </div>
+    </div>
+
+    <script>
+        async function checkNews() {
+            const newsText = document.getElementById("newsText").value.trim();
+            const resultBox = document.getElementById("resultBox");
+            const probabilitySection = document.getElementById("probabilitySection");
+            const realBar = document.getElementById("realBar");
+            const probaText = document.getElementById("probaText");
+
+            if (newsText === "") {
+                resultBox.innerHTML = "⚠️ Please enter some news content!";
+                resultBox.className = "mt-6 text-center font-bold text-lg text-yellow-600";
+                resultBox.classList.remove("hidden");
+                probabilitySection.classList.add("hidden");
+                return;
+            }
+
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: newsText })
+            });
+
+            const data = await response.json();
+
+            // Show prediction result
+            resultBox.innerHTML = data.result;
+            resultBox.classList.remove("hidden");
+            resultBox.className = `mt-6 text-center font-bold text-lg ${
+                data.result.includes("Real") ? "text-green-600" : "text-red-600"
+            }`;
+
+            // Show probability graph
+            probabilitySection.classList.remove("hidden");
+            realBar.style.width = data.real_prob + "%";
+            realBar.style.backgroundColor = data.result.includes("Real") ? "#22c55e" : "#ef4444";
+            probaText.innerHTML = `Real: ${data.real_prob}% | Fake: ${data.fake_prob}%`;
+        }
+    </script>
+
+</body>
+</html>
